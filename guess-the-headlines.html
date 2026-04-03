@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess the Headlines — India Edition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <style>
+    body { background-color: #030712; }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse-ring { animation: pulseRing 2s ease-in-out infinite; }
+    @keyframes pulseRing { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  </style>
+</head>
+<body class="dark">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ─────────────────────────────────────────────
+    // QUESTION DATA  — add more objects to expand
+    // ─────────────────────────────────────────────
+    const ALL_QUESTIONS = [
+      // ── ROUND 1 ──────────────────────────────
+      {
+        id: 1,
+        round: 1,
+        options: [
+          { letter: "A", text: "Elephant escapes from a wedding in Jaipur and blocks a major highway for three hours" },
+          { letter: "B", text: "Monkey hijacks a bus in Bareilly, crashing it into two others before the driver can stop it" },
+          { letter: "C", text: "Gang of monkeys storms a Delhi government office and makes off with all the paperwork" },
+        ],
+        answer: "B",
+        trivia: "A monkey in Bareilly climbed into an unattended bus at a station, released the handbrake and rammed it into two other buses. A transport spokesperson said monkeys had become a \"regular menace\" at bus stations, frequently tampering with vehicles under repair. (Ranker / Indian media)",
+      },
+      {
+        id: 2,
+        round: 1,
+        options: [
+          { letter: "A", text: "Goat named Babli arrested alongside her owner for eating a local judge's garden" },
+          { letter: "B", text: "Cow wanders into a Rajasthan courtroom and sits in the judge's chair for 45 minutes" },
+          { letter: "C", text: "Herd of goats breaks into a Pune school and devours the entire batch of exam papers" },
+        ],
+        answer: "A",
+        trivia: "A goat called Babli and her owner were arrested in 2016 after the animal ate the flowers and vegetables in the garden of their neighbour — who happened to be a judge. Both were later released on bail. (Ranker)",
+      },
+      {
+        id: 3,
+        round: 1,
+        options: [
+          { letter: "A", text: "Pet crow trained to shout \"bribe\" is seized during a police corruption raid in Chennai" },
+          { letter: "B", text: "Parrot in Hyderabad memorises its owner's ATM PIN and helps thieves drain the account" },
+          { letter: "C", text: "Parrot detained by police after repeatedly shouting obscenities at an 85-year-old woman" },
+        ],
+        answer: "C",
+        trivia: "Rajuran police detained a parrot after an 85-year-old woman filed a complaint saying the bird insulted her with foul language every time it saw her face. She had filed the same complaint three times over two years before officers finally stepped in. (Ranker)",
+      },
+      {
+        id: 4,
+        round: 1,
+        options: [
+          { letter: "A", text: "Two-year-old in Kolkata issued a trespass fine after crawling onto a busy highway" },
+          { letter: "B", text: "A 3-year-old girl in India put on a police charge sheet for armed robbery after a neighbour dispute" },
+          { letter: "C", text: "Five-year-old boy summoned to court in Jaipur for allegedly stealing mangoes from a government tree" },
+        ],
+        answer: "B",
+        trivia: "A neighbour dispute in India escalated when one family called the police on the other — naming the other family's 3-year-old girl as the armed robber. Officers only realised they'd been tricked after arriving and harassing the family. Bizarrely, it wasn't even the first time the toddler had been accused of the same crime. (Ranker)",
+      },
+      // ── ROUND 2 ──────────────────────────────
+      {
+        id: 5,
+        round: 2,
+        options: [
+          { letter: "A", text: "Bihar man files a police complaint claiming a stray dog stole 400,000 rupees from him" },
+          { letter: "B", text: "Monkey snatches a tourist's wallet in Agra and drops it into a temple donation box" },
+          { letter: "C", text: "Man in Uttar Pradesh takes his neighbour to court after their cat eats his prize koi fish" },
+        ],
+        answer: "A",
+        trivia: "A man in Bihar lodged a formal police complaint claiming a stray dog had stolen 400,000 rupees (roughly $7,400) from him. Officers were sceptical but registered the complaint. No word on whether the dog was ever charged. (Ranker)",
+      },
+      {
+        id: 6,
+        round: 2,
+        options: [
+          { letter: "A", text: "Mumbai man breaks a record for most government forms stamped in one minute using only his chin" },
+          { letter: "B", text: "Indian man sets a Guinness World Record for the fastest nose-typing speed on a mobile phone" },
+          { letter: "C", text: "Kolkata student completes her entire university exam paper writing with her left foot, claiming a record" },
+        ],
+        answer: "B",
+        trivia: "An Indian man trained for years to type at speed using only his nose, eventually breaking the Guinness World Record. Notably, the artist who inspired him — Ani K. from Kerala — had already given up nose-painting the moment he discovered a rival nose-painter existed. (Ranker)",
+      },
+      {
+        id: 7,
+        round: 2,
+        options: [
+          { letter: "A", text: "Bengaluru installs a singing mannequin on a motorbike at traffic lights to slow down speeders" },
+          { letter: "B", text: "Village in Uttar Pradesh props a scarecrow in a police uniform outside the town's only ATM" },
+          { letter: "C", text: "A life-size cardboard cutout of a police officer is placed at a busy junction to deter traffic violations" },
+        ],
+        answer: "C",
+        trivia: "Traffic authorities placed a life-size cardboard cutout of a police officer at a notoriously chaotic Indian intersection. It reportedly worked — drivers slowed down and obeyed signals when they spotted the cardboard cop. (Ranker / Indian traffic news)",
+      },
+      {
+        id: 8,
+        round: 2,
+        options: [
+          { letter: "A", text: "Passenger arrested at Indian airport after customs found he had swallowed gold bars" },
+          { letter: "B", text: "Traveller caught at Mumbai airport with 47 SIM cards hidden inside a block of ghee" },
+          { letter: "C", text: "Man apprehended at Delhi airport with live fish taped inside a false-bottom tiffin box" },
+        ],
+        answer: "A",
+        trivia: "Customs officials at an Indian airport detected gold bars inside a passenger's stomach using an X-ray scanner. The man had swallowed them to avoid detection and had to wait under supervision for the evidence to, eventually, emerge. (Ranker / Indian customs reports)",
+      },
+      // ── ROUND 3 ──────────────────────────────
+      {
+        id: 9,
+        round: 3,
+        options: [
+          { letter: "A", text: "Mumbai startup launches an AI tool that scores a groom's dancing ability before the wedding is approved by the family" },
+          { letter: "B", text: "India's booming pre-marital detective agencies now specialise in investigating the future mother-in-law" },
+          { letter: "C", text: "Delhi matchmaking service lets families hire a professional lie detector operator for use at first meetings" },
+        ],
+        answer: "B",
+        trivia: "India's pre-marital detective industry has exploded, initially hired to investigate the finances and romantic histories of brides and grooms. A newer trend has agencies investigating the character of the prospective mother-in-law — reportedly the most requested service of all. (Ranker)",
+      },
+      {
+        id: 10,
+        round: 3,
+        options: [
+          { letter: "A", text: "Retired postman in Nagpur writes personalised wedding invitations using only his little toe, with 200 regular clients" },
+          { letter: "B", text: "Man in Hyderabad carves vegetable portraits using only his eyebrows, exhibited at a state art fair" },
+          { letter: "C", text: "Artist from Kerala paints detailed celebrity portraits using only his tongue as a paintbrush" },
+        ],
+        answer: "C",
+        trivia: "Ani K. from Kerala paints strikingly detailed portraits using his tongue as a brush. He originally set records using his nose — but abandoned it the moment he discovered another nose-painter existed, saying \"I'm always trying to do something different.\" (Ranker)",
+      },
+      {
+        id: 11,
+        round: 3,
+        options: [
+          { letter: "A", text: "Nearly 600 students expelled in Bihar after parents scaled school walls to pass cheat sheets through exam room windows" },
+          { letter: "B", text: "School in Gujarat cancels all exams after question papers were posted to a WhatsApp group by the printing company" },
+          { letter: "C", text: "Students in Rajasthan hire professional lip-readers to decode invigilators' whispered answers during tests" },
+        ],
+        answer: "A",
+        trivia: "In Patna, Bihar, images went viral showing parents clinging to the outer walls of a school building, passing rolled-up cheat sheets through windows to their children sitting exams inside. Nearly 600 students were expelled and the state's education system faced national scandal. (Ranker)",
+      },
+      {
+        id: 12,
+        round: 3,
+        options: [
+          { letter: "A", text: "Groom in Surat arrives at his own wedding wearing a suit stitched entirely from Rs 10 currency notes" },
+          { letter: "B", text: "Indian man spends over Rs 1 crore on a shirt made of solid gold to attract women" },
+          { letter: "C", text: "Jaipur jeweller commissions a turban studded with 5,000 diamonds to wear at a national beauty pageant" },
+        ],
+        answer: "B",
+        trivia: "Datta Phuge from Pune spent Rs 1.26 crore (around $22,000) on a shirt woven from 3.3 kg of solid gold thread. He wore it specifically to attract female attention, saying gold was the only thing he needed to impress. Fifteen goldsmiths worked for two weeks to make it. (Ranker / multiple outlets)",
+      },
+    ];
+
+    // ─────────────────────────────────────────────
+    // CONSTANTS
+    // ─────────────────────────────────────────────
+    const COLORS = [
+      { bg: "bg-blue-600",    border: "border-blue-500",    text: "text-blue-300",    badge: "bg-blue-900/60"    },
+      { bg: "bg-rose-600",    border: "border-rose-500",    text: "text-rose-300",    badge: "bg-rose-900/60"    },
+      { bg: "bg-emerald-600", border: "border-emerald-500", text: "text-emerald-300", badge: "bg-emerald-900/60" },
+      { bg: "bg-amber-500",   border: "border-amber-500",   text: "text-amber-300",   badge: "bg-amber-900/60"   },
+      { bg: "bg-purple-600",  border: "border-purple-500",  text: "text-purple-300",  badge: "bg-purple-900/60"  },
+      { bg: "bg-pink-600",    border: "border-pink-500",    text: "text-pink-300",    badge: "bg-pink-900/60"    },
+    ];
+
+    // ─────────────────────────────────────────────
+    // SETUP SCREEN
+    // ─────────────────────────────────────────────
+    function SetupScreen({ onStart }) {
+      const [numTeams, setNumTeams] = useState(4);
+      const [teamNames, setTeamNames] = useState(["Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6"]);
+
+      const updateName = (i, val) => {
+        const names = [...teamNames];
+        names[i] = val;
+        setTeamNames(names);
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+          <div className="w-full max-w-lg fade-in">
+
+            {/* Hero */}
+            <div className="text-center mb-8">
+              <div className="text-7xl mb-4">🇮🇳</div>
+              <h1 className="text-5xl font-black text-white tracking-tight mb-2">Guess the Headlines</h1>
+              <p className="text-gray-400 text-lg">India Edition · 3 rounds · 4 teams · 1 real headline</p>
+            </div>
+
+            {/* Config card */}
+            <div className="bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-800">
+
+              {/* Team count */}
+              <div className="mb-6">
+                <label className="block text-gray-400 font-semibold mb-3 text-xs uppercase tracking-widest">
+                  Number of Teams
+                </label>
+                <div className="flex gap-2">
+                  {[2, 3, 4, 5, 6].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setNumTeams(n)}
+                      className={`w-12 h-12 rounded-xl font-bold text-lg transition-all duration-150 ${
+                        numTeams === n
+                          ? "bg-indigo-600 text-white ring-2 ring-indigo-400 ring-offset-2 ring-offset-gray-900 scale-105"
+                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team names */}
+              <div className="mb-6">
+                <label className="block text-gray-400 font-semibold mb-3 text-xs uppercase tracking-widest">
+                  Team Names
+                </label>
+                <div className="space-y-2">
+                  {Array.from({ length: numTeams }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${COLORS[i].bg}`}>
+                        {i + 1}
+                      </span>
+                      <input
+                        value={teamNames[i]}
+                        onChange={e => updateName(i, e.target.value)}
+                        className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2.5 border border-gray-700 focus:outline-none focus:border-indigo-500 transition-colors"
+                        placeholder={`Team ${i + 1}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Scoring info */}
+              <div className="bg-gray-800/60 rounded-xl p-4 mb-6 flex gap-3 items-start border border-gray-700">
+                <span className="text-xl mt-0.5">💡</span>
+                <div className="text-sm text-gray-400">
+                  <strong className="text-gray-200">Scoring:</strong>{" "}
+                  Correct on first guess = <span className="text-emerald-400 font-bold">20 pts</span>.{" "}
+                  Correct on second guess = <span className="text-yellow-400 font-bold">10 pts</span>.{" "}
+                  Two wrong guesses = <span className="text-red-400 font-bold">0 pts</span>.
+                </div>
+              </div>
+
+              <button
+                onClick={() => onStart(numTeams, teamNames.slice(0, numTeams))}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-4 rounded-xl text-lg transition-all duration-150 active:scale-[0.98]"
+              >
+                Start Game 🎉
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // QM DASHBOARD
+    // ─────────────────────────────────────────────
+    function Dashboard({ teams, scores, questions, questionStates, onSelectQuestion, onEndGame }) {
+      const totalQuestions = questions.length;
+      const doneCount = Object.values(questionStates).filter(s => s === "done").length;
+
+      return (
+        <div className="min-h-screen bg-gray-950 p-5 fade-in">
+          <div className="max-w-5xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-black text-white">📰 Guess the Headlines</h1>
+                <p className="text-gray-500 text-sm font-mono">
+                  Quiz Master · {doneCount}/{totalQuestions} questions played
+                </p>
+              </div>
+              <button
+                onClick={onEndGame}
+                className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+              >
+                🏆 Final Scores
+              </button>
+            </div>
+
+            {/* Scoreboard */}
+            <div className={`grid gap-3 mb-7 ${teams.length <= 3 ? 'grid-cols-3' : teams.length <= 4 ? 'grid-cols-4' : 'grid-cols-3 md:grid-cols-6'}`}>
+              {teams.map((team, i) => (
+                <div key={i} className={`bg-gray-900 rounded-xl p-4 border-2 ${COLORS[i].border}`}>
+                  <div className={`text-xs font-bold uppercase tracking-wider mb-1 truncate ${COLORS[i].text}`}>{team}</div>
+                  <div className="text-4xl font-black text-white leading-none">{scores[i]}</div>
+                  <div className="text-gray-600 text-xs mt-1">points</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-5">
+              <div className="flex justify-between text-xs text-gray-600 mb-1 font-mono">
+                <span>Progress</span>
+                <span>{doneCount} / {totalQuestions}</span>
+              </div>
+              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                  style={{ width: `${(doneCount / totalQuestions) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Questions grid grouped by round */}
+            <div className="space-y-6">
+              {[1, 2, 3].map(round => {
+                const roundQs = questions.filter(q => q.round === round);
+                if (roundQs.length === 0) return null;
+                return (
+                  <div key={round}>
+                    <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-3">
+                      Round {round}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {roundQs.map((q, qi) => {
+                        const teamIdx = (questions.indexOf(q)) % teams.length;
+                        const state = questionStates[q.id] || "pending";
+                        const isDone = state === "done";
+
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => !isDone && onSelectQuestion(q, teamIdx)}
+                            disabled={isDone}
+                            className={`text-left rounded-xl p-4 border-2 transition-all duration-150 ${
+                              isDone
+                                ? "bg-gray-900/50 border-gray-800 opacity-40 cursor-not-allowed"
+                                : "bg-gray-900 border-gray-700 hover:border-indigo-500 hover:bg-gray-800 cursor-pointer active:scale-[0.98]"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-gray-600 text-xs font-mono font-bold">Q{q.id}</span>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${COLORS[teamIdx].badge} ${COLORS[teamIdx].text}`}>
+                                  {teams[teamIdx]}
+                                </span>
+                                {isDone && (
+                                  <span className="text-emerald-400 text-xs font-semibold">✓ Done</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              {q.options.map(opt => (
+                                <p key={opt.letter} className="text-gray-400 text-xs leading-snug flex gap-2">
+                                  <span className="text-gray-600 font-bold flex-shrink-0">{opt.letter}.</span>
+                                  <span className="line-clamp-1">{opt.text}</span>
+                                </p>
+                              ))}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // ACTIVE QUESTION SCREEN
+    // ─────────────────────────────────────────────
+    function QuestionScreen({ question, team, teamIdx, teamColor, onScore, onBack }) {
+      const [phase, setPhase] = useState("guess"); // guess | second_chance | reveal
+      const [selectedFirst, setSelectedFirst] = useState(null);
+      const [selectedSecond, setSelectedSecond] = useState(null);
+      const [pointsAwarded, setPointsAwarded] = useState(null);
+      const [showQMAnswer, setShowQMAnswer] = useState(false);
+      const [scored, setScored] = useState(false);
+
+      const correctLetter = question.answer;
+      const isReveal = phase === "reveal";
+
+      const handleFirstGuess = (letter) => {
+        setSelectedFirst(letter);
+        if (letter === correctLetter) {
+          setPointsAwarded(20);
+          if (!scored) { onScore(20); setScored(true); }
+          setPhase("reveal");
+        } else {
+          setPhase("second_chance");
+        }
+      };
+
+      const handleSecondGuess = (letter) => {
+        setSelectedSecond(letter);
+        const pts = letter === correctLetter ? 10 : 0;
+        setPointsAwarded(pts);
+        if (!scored) { onScore(pts); setScored(true); }
+        setPhase("reveal");
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-950 flex flex-col fade-in">
+
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-5 py-3 bg-gray-900 border-b border-gray-800">
+            <button
+              onClick={onBack}
+              className="text-gray-500 hover:text-gray-200 text-sm transition-colors flex items-center gap-1"
+            >
+              ← Dashboard
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600 text-sm font-mono">Q{question.id}</span>
+              <span className={`text-sm font-bold px-3 py-1 rounded-full ${teamColor.badge} ${teamColor.text}`}>
+                {team}'s Turn
+              </span>
+            </div>
+            <button
+              onClick={() => setShowQMAnswer(!showQMAnswer)}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-all font-semibold ${
+                showQMAnswer
+                  ? "bg-yellow-900/50 border-yellow-600 text-yellow-300"
+                  : "bg-gray-800 border-gray-700 text-gray-500 hover:text-gray-200"
+              }`}
+            >
+              {showQMAnswer ? "🙈 Hide Answer" : "👁 QM: Show Answer"}
+            </button>
+          </div>
+
+          {/* QM Answer Banner */}
+          {showQMAnswer && !isReveal && (
+            <div className="bg-yellow-950/60 border-b border-yellow-800 px-5 py-3">
+              <div className="max-w-3xl mx-auto flex items-start gap-3">
+                <span className="text-yellow-400 text-xl shrink-0 mt-0.5">🔑</span>
+                <div>
+                  <div className="text-yellow-300 font-bold text-sm mb-1">
+                    Answer: <span className="text-white">{correctLetter}</span>
+                    {" — "}
+                    {question.options.find(o => o.letter === correctLetter)?.text}
+                  </div>
+                  <div className="text-yellow-200/60 text-xs leading-relaxed">{question.trivia}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main */}
+          <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
+            <div className="w-full max-w-3xl">
+
+              {/* Phase header */}
+              <div className="text-center mb-7">
+                {phase === "guess" && (
+                  <div>
+                    <div className="inline-flex items-center gap-2 bg-indigo-900/50 border border-indigo-700 rounded-full px-4 py-1.5 text-indigo-300 text-xs font-bold uppercase tracking-widest mb-3">
+                      <span className="w-2 h-2 bg-indigo-400 rounded-full pulse-ring inline-block"></span>
+                      Attempt 1 · 20 Points
+                    </div>
+                    <div className="text-white text-3xl font-black">Which headline is REAL?</div>
+                  </div>
+                )}
+                {phase === "second_chance" && (
+                  <div>
+                    <div className="inline-flex items-center gap-2 bg-amber-900/50 border border-amber-700 rounded-full px-4 py-1.5 text-amber-300 text-xs font-bold uppercase tracking-widest mb-3">
+                      <span className="w-2 h-2 bg-amber-400 rounded-full pulse-ring inline-block"></span>
+                      Attempt 2 · 10 Points
+                    </div>
+                    <div className="text-white text-3xl font-black">Wrong! One more try…</div>
+                  </div>
+                )}
+                {isReveal && (
+                  <div>
+                    <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-3 ${
+                      pointsAwarded > 0
+                        ? "bg-emerald-900/50 border border-emerald-600 text-emerald-300"
+                        : "bg-red-900/50 border border-red-700 text-red-300"
+                    }`}>
+                      {pointsAwarded > 0 ? `+${pointsAwarded} Points Awarded!` : "No Points"}
+                    </div>
+                    <div className="text-white text-3xl font-black">
+                      {pointsAwarded === 20 ? "🎉 Got it first time!" : pointsAwarded === 10 ? "✅ Got it on the second try!" : "❌ Unlucky!"}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Options */}
+              <div className="space-y-3 mb-7">
+                {question.options.map(opt => {
+                  const isCorrect = opt.letter === correctLetter;
+                  const wasFirstWrong = selectedFirst === opt.letter && !isCorrect;
+                  const wasSecondWrong = selectedSecond === opt.letter && !isCorrect;
+                  const isDisabled = isReveal || (phase === "second_chance" && opt.letter === selectedFirst);
+
+                  let cardStyle = "bg-gray-900 border-gray-700 text-white";
+                  let letterStyle = "text-gray-500";
+                  let icon = null;
+
+                  if (isReveal) {
+                    if (isCorrect) {
+                      cardStyle = "bg-emerald-950/70 border-emerald-500 text-white";
+                      letterStyle = "text-emerald-400";
+                      icon = "✅";
+                    } else if (wasFirstWrong || wasSecondWrong) {
+                      cardStyle = "bg-red-950/50 border-red-700 text-gray-400";
+                      letterStyle = "text-red-400";
+                      icon = "❌";
+                    } else {
+                      cardStyle = "bg-gray-900/50 border-gray-800 text-gray-600";
+                    }
+                  } else if (phase === "second_chance" && opt.letter === selectedFirst) {
+                    cardStyle = "bg-gray-900/50 border-gray-800 text-gray-500";
+                  }
+
+                  return (
+                    <button
+                      key={opt.letter}
+                      onClick={() => {
+                        if (isDisabled) return;
+                        phase === "guess" ? handleFirstGuess(opt.letter) : handleSecondGuess(opt.letter);
+                      }}
+                      disabled={isDisabled}
+                      className={`w-full text-left rounded-xl p-5 border-2 transition-all duration-150 flex items-start gap-4 ${cardStyle} ${
+                        !isDisabled ? "hover:border-indigo-500 hover:bg-gray-800 cursor-pointer active:scale-[0.99]" : "cursor-default"
+                      }`}
+                    >
+                      <span className={`text-2xl font-black w-8 flex-shrink-0 leading-none pt-0.5 ${letterStyle}`}>
+                        {opt.letter}
+                      </span>
+                      <span className="text-base leading-relaxed flex-1">{opt.text}</span>
+                      {icon && <span className="text-2xl flex-shrink-0 ml-auto">{icon}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Trivia reveal */}
+              {isReveal && (
+                <div className="bg-indigo-950/60 border border-indigo-800 rounded-xl p-5 mb-6 fade-in">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">📖</span>
+                    <div>
+                      <div className="text-indigo-300 font-bold text-xs uppercase tracking-wider mb-1.5">The Real Story</div>
+                      <p className="text-gray-200 leading-relaxed">{question.trivia}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Done CTA */}
+              {isReveal && (
+                <div className="text-center">
+                  <button
+                    onClick={onBack}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-10 py-3.5 rounded-xl text-lg transition-all active:scale-[0.97]"
+                  >
+                    Back to Dashboard →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // FINAL SCORES
+    // ─────────────────────────────────────────────
+    function FinalScores({ teams, scores, onRestart }) {
+      const ranked = teams
+        .map((name, i) => ({ name, score: scores[i], colorIdx: i }))
+        .sort((a, b) => b.score - a.score);
+
+      const medals = ["🥇", "🥈", "🥉"];
+
+      return (
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6 fade-in">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="text-7xl mb-4">🏆</div>
+              <h1 className="text-5xl font-black text-white">Final Scores</h1>
+              <p className="text-gray-500 mt-2">Thanks for playing!</p>
+            </div>
+
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden mb-6">
+              {ranked.map((team, i) => (
+                <div
+                  key={team.name}
+                  className={`flex items-center gap-4 px-5 py-4 ${
+                    i === 0
+                      ? "bg-yellow-950/50 border-b border-yellow-900"
+                      : i < ranked.length - 1
+                      ? "border-b border-gray-800"
+                      : ""
+                  }`}
+                >
+                  <span className="text-3xl w-10 text-center">{medals[i] || `#${i + 1}`}</span>
+                  <div className="flex-1">
+                    <div className={`font-bold text-lg ${i === 0 ? "text-yellow-300" : "text-white"}`}>
+                      {team.name}
+                    </div>
+                    {i === 0 && (
+                      <div className="text-yellow-600 text-xs font-semibold">🎉 Winner!</div>
+                    )}
+                  </div>
+                  <div className={`text-4xl font-black ${i === 0 ? "text-yellow-300" : "text-white"}`}>
+                    {team.score}
+                  </div>
+                  <div className="text-gray-600 text-sm w-6">pts</div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={onRestart}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl text-lg transition-all active:scale-[0.98]"
+            >
+              Play Again 🔄
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // ROOT APP
+    // ─────────────────────────────────────────────
+    function App() {
+      const [view, setView] = useState("setup");
+      const [teams, setTeams] = useState([]);
+      const [scores, setScores] = useState([]);
+      const [questionStates, setQuestionStates] = useState({});
+      const [activeQuestion, setActiveQuestion] = useState(null);
+      const [activeTeamIdx, setActiveTeamIdx] = useState(0);
+
+      const handleStart = (numTeams, teamNames) => {
+        setTeams(teamNames);
+        setScores(Array(numTeams).fill(0));
+        setQuestionStates({});
+        setActiveQuestion(null);
+        setView("dashboard");
+      };
+
+      const handleSelectQuestion = (q, teamIdx) => {
+        setActiveQuestion(q);
+        setActiveTeamIdx(teamIdx);
+        setView("question");
+      };
+
+      const handleScore = (pts) => {
+        setScores(prev => {
+          const next = [...prev];
+          next[activeTeamIdx] = (next[activeTeamIdx] || 0) + pts;
+          return next;
+        });
+      };
+
+      const handleBackToDashboard = () => {
+        if (activeQuestion) {
+          setQuestionStates(prev => ({ ...prev, [activeQuestion.id]: "done" }));
+        }
+        setActiveQuestion(null);
+        setView("dashboard");
+      };
+
+      if (view === "setup") return <SetupScreen onStart={handleStart} />;
+
+      if (view === "question" && activeQuestion) {
+        return (
+          <QuestionScreen
+            question={activeQuestion}
+            team={teams[activeTeamIdx]}
+            teamIdx={activeTeamIdx}
+            teamColor={COLORS[activeTeamIdx]}
+            onScore={handleScore}
+            onBack={handleBackToDashboard}
+          />
+        );
+      }
+
+      if (view === "final") {
+        return <FinalScores teams={teams} scores={scores} onRestart={() => setView("setup")} />;
+      }
+
+      return (
+        <Dashboard
+          teams={teams}
+          scores={scores}
+          questions={ALL_QUESTIONS}
+          questionStates={questionStates}
+          onSelectQuestion={handleSelectQuestion}
+          onEndGame={() => setView("final")}
+        />
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
